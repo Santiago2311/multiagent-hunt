@@ -104,70 +104,75 @@ class Personaje:
         else:
             self.estado = "REPOSO"
 
-    def animation(self):
+    def animation(self, factor):
         if self.giro_brazo_izq >= 50 or self.giro_brazo_der >= 50:
             self.animacion = not self.animacion
         if self.animacion:
-            self.giro_brazo_izq += self.velocidad_giro
-            self.giro_brazo_der -= self.velocidad_giro
+            self.giro_brazo_izq += self.velocidad_giro*factor
+            self.giro_brazo_der -= self.velocidad_giro*factor
         else:
-            self.giro_brazo_der += self.velocidad_giro
-            self.giro_brazo_izq -= self.velocidad_giro
+            self.giro_brazo_der += self.velocidad_giro*factor
+            self.giro_brazo_izq -= self.velocidad_giro*factor
     
     def update(self):
         if self.estado == "AVANZAR":
             rad = math.radians(self.angulo_personaje)
             self.posicion[0] += self.velocidad_avance * math.sin(rad)
             self.posicion[2] += self.velocidad_avance * math.cos(rad)
-            self.animation()
+            self.animation(1)
             
         elif self.estado == "RETROCEDER":
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] -= self.velocidad_avance * math.sin(rad)
-            self.posicion[2] -= self.velocidad_avance * math.cos(rad)
-            self.animation()
+            self.posicion[0] -= self.velocidad_avance/2 * math.sin(rad)
+            self.posicion[2] -= self.velocidad_avance/2 * math.cos(rad)
+            self.animation(0.5)
             
         elif self.estado == "AVANZAR_GIRAR_IZQ":
             self.angulo_personaje += self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
             self.posicion[0] += self.velocidad_avance * math.sin(rad)
             self.posicion[2] += self.velocidad_avance * math.cos(rad)
-            self.animation() 
+            self.animation(1) 
 
         elif self.estado == "AVANZAR_GIRAR_DER":
             self.angulo_personaje -= self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
             self.posicion[0] += self.velocidad_avance * math.sin(rad)
             self.posicion[2] += self.velocidad_avance * math.cos(rad)
-            self.animation()
+            self.animation(1)
             
         elif self.estado == "RETROCEDER_GIRAR_DER":
             self.angulo_personaje -= self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] -= self.velocidad_avance * math.sin(rad)
-            self.posicion[2] -= self.velocidad_avance * math.cos(rad)
-            self.animation()
+            self.posicion[0] -= self.velocidad_avance/2 * math.sin(rad)
+            self.posicion[2] -= self.velocidad_avance/2 * math.cos(rad)
+            self.animation(0.5)
             
         elif self.estado == "RETROCEDER_GIRAR_IZQ":
             self.angulo_personaje += self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] -= self.velocidad_avance * math.sin(rad)
-            self.posicion[2] -= self.velocidad_avance * math.cos(rad)
-            self.animation()
+            self.posicion[0] -= self.velocidad_avance/2 * math.sin(rad)
+            self.posicion[2] -= self.velocidad_avance/2 * math.cos(rad)
+            self.animation(0.5)
             
         elif self.estado == "GIRAR_IZQ_ESTATICO":
             self.angulo_personaje += self.velocidad_giro
+            self.reset()
             
         elif self.estado == "GIRAR_DER_ESTATICO":
             self.angulo_personaje -= self.velocidad_giro
+            self.reset()
             
         elif self.estado == "REPOSO":
-            if abs(self.giro_brazo_izq) > 0.5:
-                self.giro_brazo_izq /= self.velocidad_giro
-                self.giro_brazo_der /= self.velocidad_giro
-            else:
-                self.giro_brazo_izq = 0.0
-                self.giro_brazo_der = 0.0
+            self.reset()
+
+    def reset(self):
+        if abs(self.giro_brazo_izq) > 0.5:
+            self.giro_brazo_izq /= self.velocidad_giro
+            self.giro_brazo_der /= self.velocidad_giro
+        else:
+            self.giro_brazo_izq = 0.0
+            self.giro_brazo_der = 0.0
     
     def draw(self):
         glPushMatrix()
