@@ -144,8 +144,8 @@ def Init():
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
     glShadeModel(GL_SMOOTH)
     
-    obj_personaje = OBJ("model/personaje.obj", swapyz=True)
-    obj_brazo = OBJ("model/brazo.obj", swapyz=True)
+    obj_personaje = OBJ("model/personaje.obj", swapyz=False)
+    obj_brazo = OBJ("model/brazo.obj", swapyz=False)
     obj_pierna = OBJ("model/pierna.obj", swapyz=True)
    
     personaje = Personaje(obj_personaje, obj_brazo, obj_pierna)

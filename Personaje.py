@@ -9,7 +9,7 @@ class Personaje:
         self.brazo = obj_brazo
         self.pierna = obj_pierna
         
-        self.posicion = np.array([0.0, 0.0, 0.0])  
+        self.posicion = np.array([0.0, 40.0, 0.0])  
         self.angulo_personaje = 0.0  
         
         self.velocidad_avance = 2.0
@@ -19,48 +19,15 @@ class Personaje:
         
         self.estado = "REPOSO"  
         
-        self.offset_brazo_izq = np.array([7.0, 3.0, 13.0])  # Derecha, adelante
-        self.offset_brazo_der = np.array([-7.0, 3.0, 13.0])  # Izquierda, adelante
-        self.offset_pierna_izq = np.array([0.0, 3.0, -13.0])  # Centro, atrás
-        self.offset_pierna_der = np.array([0.0, 0.0, 0.0])
+        self.offset_brazo_izq = np.array([5.0, 5.0, 0.0])  # Derecha, adelante
+        self.offset_brazo_der = np.array([-5.0, 5.0, 0.0])  # Izquierda, adelante
+        self.offset_pierna_izq = np.array([2.0, -5.0, 0.0])  # Centro, atrás
+        self.offset_pierna_der = np.array([-2.0, -5.0, 0.0])
         
         self.escala = 10.0
         self.animacion = False
         
-        #T(pos) * R_y(a)
-        """[cos(a), 0, sin(a), tx],
-            [0, 1, 0, ty],
-            [-sin(a), 0, cos(a), tz],
-            [0, 0, 0, 1]"""
-        #matriz_punto_inicial
-        #Punto_inicial * E(s)
-        """[e*cos(a), 0, e*sin(a), tx],
-            [0, e, 0, ty],
-            [-sin(a)*e, 0, cos(a)*e, tz],
-            [0, 0, 0, 1]"""
-        #matriz_carroceria = 
-        #Punto_inicial * T(offset) * R_y(b) * R_x(c) * E(s)
-        """[e*(-sin(a)*sin(b) + cos(a)*cos(b)), e*(sin(a)*cos(b) + sin(b)*cos(a))*sin(c), e*(sin(a)*cos(b) + sin(b)*cos(a))*cos(c)
-            , ox*cos(a) + oz*sin(a) + tx],
-            [0, e*cos(c), -e*sin(c), oy + ty],
-            [e*(-sin(a)*cos(b) - sin(b)*cos(a)), e*(-sin(a)*sin(b) + cos(a)*cos(b))*sin(c), e*(-sin(a)*sin(b) + cos(a)*cos(b))*cos(
-            c), -ox*sin(a) + oz*cos(a) + tz],
-            [0, 0, 0, 1]"""
-        #matriz_llanta_derecha = 
-        #Punto_inicial * T(offset) * R_y(b) * R_x(c) * E(s)
-        """[e*(-sin(a)*sin(b) + cos(a)*cos(b)), e*(sin(a)*cos(b) + sin(b)*cos(a))*sin(c), e*(sin(a)*cos(b) + sin(b)*cos(a))*cos(c)
-            , ox*cos(a) + oz*sin(a) + tx],
-            [0, e*cos(c), -e*sin(c), oy + ty],
-            [e*(-sin(a)*cos(b) - sin(b)*cos(a)), e*(-sin(a)*sin(b) + cos(a)*cos(b))*sin(c), e*(-sin(a)*sin(b) + cos(a)*cos(b))*cos(
-            c), -ox*sin(a) + oz*cos(a) + tz],
-            [0, 0, 0, 1]"""
-        #matriz_llanta_izquieda =
-        #Punto_inicial * T(offset) * R_x(c) * E(s)
-        """[e*cos(a), e*sin(a)*sin(c), e*sin(a)*cos(c), ox*cos(a) + oz*sin(a) + tx],
-            [0, e*cos(c), -e*sin(c), oy + ty],
-            [-e*sin(a), e*sin(c)*cos(a), e*cos(a)*cos(c), -ox*sin(a) + oz*cos(a) + tz],
-            [0, 0, 0, 1]"""
-        #matriz_llantas_traseras =
+        
         
     def calcular_matriz_torso(self):
         """
@@ -142,7 +109,7 @@ class Personaje:
             self.animacion = not self.animacion
         if self.animacion:
             self.giro_brazo_izq += self.velocidad_giro
-            self.giro_brazo_der += self.velocidad_giro
+            self.giro_brazo_der -= self.velocidad_giro
         else:
             self.giro_brazo_der += self.velocidad_giro
             self.giro_brazo_izq -= self.velocidad_giro
@@ -155,35 +122,35 @@ class Personaje:
             self.animation()
             
         elif self.estado == "RETROCEDER":
-            rad = math.radians(self.angulo_carrito)
+            rad = math.radians(self.angulo_personaje)
             self.posicion[0] -= self.velocidad_avance * math.sin(rad)
             self.posicion[2] -= self.velocidad_avance * math.cos(rad)
             self.animation()
             
         elif self.estado == "AVANZAR_GIRAR_IZQ":
             self.angulo_personaje += self.velocidad_giro
-            rad = math.radians(self.angulo_carrito)
+            rad = math.radians(self.angulo_personaje)
             self.posicion[0] += self.velocidad_avance * math.sin(rad)
             self.posicion[2] += self.velocidad_avance * math.cos(rad)
             self.animation() 
 
         elif self.estado == "AVANZAR_GIRAR_DER":
-            self.angulo_carrito -= self.velocidad_giro
-            rad = math.radians(self.angulo_carrito)
+            self.angulo_personaje -= self.velocidad_giro
+            rad = math.radians(self.angulo_personaje)
             self.posicion[0] += self.velocidad_avance * math.sin(rad)
             self.posicion[2] += self.velocidad_avance * math.cos(rad)
             self.animation()
             
         elif self.estado == "RETROCEDER_GIRAR_DER":
-            self.angulo_carrito -= self.velocidad_giro
-            rad = math.radians(self.angulo_carrito)
+            self.angulo_personaje -= self.velocidad_giro
+            rad = math.radians(self.angulo_personaje)
             self.posicion[0] -= self.velocidad_avance * math.sin(rad)
             self.posicion[2] -= self.velocidad_avance * math.cos(rad)
             self.animation()
             
         elif self.estado == "RETROCEDER_GIRAR_IZQ":
-            self.angulo_carrito += self.velocidad_giro
-            rad = math.radians(self.angulo_carrito)
+            self.angulo_personaje += self.velocidad_giro
+            rad = math.radians(self.angulo_personaje)
             self.posicion[0] -= self.velocidad_avance * math.sin(rad)
             self.posicion[2] -= self.velocidad_avance * math.cos(rad)
             self.animation()
