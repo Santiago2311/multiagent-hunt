@@ -9,20 +9,20 @@ class Personaje:
         self.brazo = obj_brazo
         self.pierna = obj_pierna
         
-        self.posicion = np.array([0.0, 40.0, 0.0])  
+        self.posicion = np.array([0.0, 15.0, 0.0])  
         self.angulo_personaje = 0.0  
         
-        self.velocidad_avance = 2.0
+        self.velocidad_avance = 3.0
         self.giro_brazo_izq = 0.0
         self.velocidad_giro = 5.0
         self.giro_brazo_der = 0.0
         
         self.estado = "REPOSO"  
         
-        self.offset_brazo_izq = np.array([5.0, 5.0, 0.0])  # Derecha, adelante
-        self.offset_brazo_der = np.array([-5.0, 5.0, 0.0])  # Izquierda, adelante
-        self.offset_pierna_izq = np.array([2.0, -5.0, 0.0])  # Centro, atrás
-        self.offset_pierna_der = np.array([-2.0, -5.0, 0.0])
+        self.offset_brazo_izq = np.array([5.5, 5.4, 0.0])  # Derecha, adelante
+        self.offset_brazo_der = np.array([-5.5, 5.4, 0.0])  # Izquierda, adelante
+        self.offset_pierna_izq = np.array([2.0, -7.0, 0.0])  # Centro, atrás
+        self.offset_pierna_der = np.array([-2.0, -7.0, 0.0])
         
         self.escala = 10.0
         self.animacion = False
@@ -72,7 +72,7 @@ class Personaje:
         return np.array([
         [esc*c, esc*srot*s, esc*s*crot, ox*c + oz*s + tx],
         [0, esc*crot, (-1)*esc*srot, oy + ty],
-        [(-1)*esc*s, esc*srot*c, esc*crot*c, (-1)*s + oz*c + tz],
+        [(-1)*esc*s, esc*srot*c, esc*crot*c, (-1)*ox*s + oz*c + tz],
         [0, 0, 0, 1]
         ], dtype=float) 
     
@@ -105,7 +105,7 @@ class Personaje:
             self.estado = "REPOSO"
 
     def animation(self):
-        if self.giro_brazo_izq >= 30 or self.giro_brazo_der >= 30:
+        if self.giro_brazo_izq >= 50 or self.giro_brazo_der >= 50:
             self.animacion = not self.animacion
         if self.animacion:
             self.giro_brazo_izq += self.velocidad_giro

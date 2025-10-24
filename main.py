@@ -99,9 +99,9 @@ def actualizar_camara_seguimiento(side):
         
         rad = math.radians(personaje.angulo_personaje)
         if side == "IZQUIERDA":
-            radside = rad + math.pi / 2
+            radside = rad #+ math.pi / 2
         else:
-            radside = rad - math.pi / 2
+            radside = rad + math.radians(180) 
         EYE_X = personaje.posicion[0] + offset_dist * math.sin(radside)
         EYE_Y = personaje.posicion[1] + offset_height
         EYE_Z = personaje.posicion[2] + offset_dist * math.cos(radside)
