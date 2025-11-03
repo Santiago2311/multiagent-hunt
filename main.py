@@ -4,8 +4,8 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 import math
 
-from objloader import OBJ
 from Personaje import Personaje
+from PersonajeAgent import PersonajeAgent
 
 screen_width = 1200
 screen_height = 800
@@ -38,8 +38,8 @@ Y_MAX = 300
 Z_MIN = -600
 Z_MAX = 600
 
-# Objeto carrito
-personaje = None
+humano = None
+personajes = None
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -93,22 +93,22 @@ def dibujar_plano():
 def actualizar_camara_seguimiento(side):
     global EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z
     
-    if personaje:
+    if humano:
         offset_dist = 80.0
         offset_height = 40.0
         
-        rad = math.radians(personaje.angulo_personaje)
+        rad = math.radians(humano.angulo_personaje)
         if side == "IZQUIERDA":
             radside = rad #+ math.pi / 2
         else:
             radside = rad + math.radians(180) 
-        EYE_X = personaje.posicion[0] + offset_dist * math.sin(radside)
-        EYE_Y = personaje.posicion[1] + offset_height
-        EYE_Z = personaje.posicion[2] + offset_dist * math.cos(radside)
+        EYE_X = humano.posicion[0] + offset_dist * math.sin(radside)
+        EYE_Y = humano.posicion[1] + offset_height
+        EYE_Z = humano.posicion[2] + offset_dist * math.cos(radside)
         
-        CENTER_X = personaje.posicion[0]
-        CENTER_Y = personaje.posicion[1] + 10
-        CENTER_Z = personaje.posicion[2]
+        CENTER_X = humano.posicion[0]
+        CENTER_Y = humano.posicion[1] + 10
+        CENTER_Z = humano.posicion[2]
 
 def actualizar_vista():
     glMatrixMode(GL_MODELVIEW)
@@ -116,7 +116,7 @@ def actualizar_vista():
     gluLookAt(EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z, UP_X, UP_Y, UP_Z)
 
 def Init():
-    global personaje 
+    global personajes, humano 
     
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
@@ -144,11 +144,11 @@ def Init():
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
     glShadeModel(GL_SMOOTH)
     
-    obj_personaje = OBJ("model/personaje.obj", swapyz=False)
-    obj_brazo = OBJ("model/brazo.obj", swapyz=False)
-    obj_pierna = OBJ("model/pierna.obj", swapyz=True)
-   
-    personaje = Personaje(obj_personaje, obj_brazo, obj_pierna)
+    humano = Personaje()
+    personajes = []
+
+    for i in range(4):
+        personajes.append(PersonajeAgent())
     
     print("\n=== CONTROLES ===")
     print("W: Avanzar")
@@ -169,11 +169,12 @@ def display():
     dibujar_plano()
     
     # Dibujar el carrito
-    if personaje:
+    humano.draw()
+    for personaje in personajes:
         personaje.draw()
 
 def main():
-    global camera_mode,personaje 
+    global camera_mode, personajes, humano 
     
     pygame.init()
     Init()
@@ -213,13 +214,13 @@ def main():
         actualizar_camara_seguimiento(camera_mode)
         actualizar_vista()
 
-        if personaje:
-            personaje.actualizar_estado(teclas_carrito)
-            personaje.update()
+        if humano:
+            humano.actualizar_estado(teclas_carrito)
+            humano.update()
             
-            if personaje.estado != estado_anterior:
-                print(f"Estado: {personaje.estado}")
-                estado_anterior = personaje.estado
+            if humano.estado != estado_anterior:
+                print(f"Estado: {humano.estado}")
+                estado_anterior = humano.estado
         
         display()
         

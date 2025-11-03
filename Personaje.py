@@ -1,10 +1,14 @@
 import numpy as np
 import math
+from objloader import OBJ 
 from OpenGL.GL import *
 from OpenGL.GLU import *
 
 class Personaje:
-    def __init__(self, obj_personaje, obj_brazo, obj_pierna):
+    def __init__(self):
+        obj_personaje = OBJ("model/personaje.obj", swapyz=False)
+        obj_brazo = OBJ("model/brazo.obj", swapyz=False)
+        obj_pierna = OBJ("model/pierna.obj", swapyz=True)
         self.torso = obj_personaje
         self.brazo = obj_brazo
         self.pierna = obj_pierna
