@@ -26,7 +26,7 @@ UP_Y = 1
 
 UP_Z = 0
 
-camera_mode = "IZQUIERDA"  
+camera_mode = "ADELANTE"  
 
 # Dimensión del plano
 DimBoard = 500
@@ -93,22 +93,48 @@ def dibujar_plano():
     glEnd()
     
     glEnable(GL_LIGHTING)
+    
+def celda_mapa(x, z, lab):
+    celda_size = 50
+    celda_x = int(round(x / celda_size)) + 7
+    celda_z = int(round(z  / celda_size)) + 6
+    
+    if 0 <= celda_z < lab.mat.shape[0] and 0 <= celda_x < lab.mat.shape[1]:
+        return lab.mat[celda_z][celda_x]
+    return 1 
+
 
 def actualizar_camara_seguimiento(side):
-    global EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z
+    global EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z, lab
     
-    if humano:
+    if humano and lab:
         offset_dist = 80.0
         offset_height = 40.0
         
         rad = math.radians(humano.angulo_personaje)
-        if side == "IZQUIERDA":
-            radside = rad #+ math.pi / 2
+        if side == "ATRAS":
+            radside = rad
         else:
             radside = rad + math.radians(180) 
         EYE_X = humano.posicion[0] + offset_dist * math.sin(radside)
         EYE_Y = humano.posicion[1] + offset_height
         EYE_Z = humano.posicion[2] + offset_dist * math.cos(radside)
+        
+        current_dist = offset_dist
+        min_dist = 5.0
+        
+        while current_dist >= min_dist:
+            EYE_X = humano.posicion[0] + current_dist * math.sin(radside)
+            EYE_Z = humano.posicion[2] + current_dist * math.cos(radside)
+            
+            if celda_mapa(EYE_X, EYE_Z, lab) == 1:
+                current_dist -= min_dist
+            else:
+                break
+            
+        if current_dist < min_dist:
+            EYE_X = humano.posicion[0] + min_dist * math.sin(radside)
+            EYE_Z = humano.posicion[2] + min_dist * math.cos(radside) 
         
         CENTER_X = humano.posicion[0]
         CENTER_Y = humano.posicion[1] + 10
@@ -150,15 +176,10 @@ def Init():
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
     glShadeModel(GL_SMOOTH)
     
-    obj_personaje = OBJ("model/personaje.obj", swapyz=False)
-    obj_brazo = OBJ("model/brazo.obj", swapyz=False)
-    obj_pierna = OBJ("model/pierna.obj", swapyz=True)
-    generador = OBJ("model/generador.obj", swapyz=True)
-    
-    lab = Mapa(generador)
+    lab = Mapa()
    
-    personaje = Personaje(obj_personaje, obj_brazo, obj_pierna, lab.mat)
-    humano = Personaje()
+    personaje = Personaje(lab.mat)
+    humano = Personaje(lab.mat)
     personajes = []
 
     for i in range(4):
@@ -172,7 +193,7 @@ def Init():
     print("S+A: Retroceder girando")
     print("S+D: Retroceder girando")
     print("\nCÁMARA:")
-    print("C: Cambiar modo de cámara (Izquieda/Derecha)")
+    print("C: Cambiar modo de cámara (Adelante/Atrás)")
     print("\nESC: Salir")
 
 def display():
@@ -218,7 +239,7 @@ def main():
                     done = True
                 elif event.key == pygame.K_c:
                     # Cambiar modo de cámara
-                    camera_mode = "DERECHA" if camera_mode == "IZQUIERDA" else "IZQUIERDA"
+                    camera_mode = "ATRAS" if camera_mode == "ADELANTE" else "ADELANTE"
                     print(f"Modo de cámara: {camera_mode}")
         
         keys = pygame.key.get_pressed()

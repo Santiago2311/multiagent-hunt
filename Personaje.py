@@ -5,8 +5,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 class Personaje:
-    def __init__(self, obj_personaje, obj_brazo, obj_pierna, mapa):
-    def __init__(self):
+    def __init__(self, mapa):
         obj_personaje = OBJ("model/personaje.obj", swapyz=False)
         obj_brazo = OBJ("model/brazo.obj", swapyz=False)
         obj_pierna = OBJ("model/pierna.obj", swapyz=True)
@@ -15,6 +14,7 @@ class Personaje:
         self.pierna = obj_pierna
         
         self.mapa = mapa
+        self.bound_radio = 10
         
         self.posicion = np.array([0.0, 15.0, 0.0])  
         self.angulo_personaje = 0.0  
@@ -33,8 +33,6 @@ class Personaje:
         
         self.escala = 10.0
         self.animacion = False
-        
-        
         
     def calcular_matriz_torso(self):
         """
@@ -123,20 +121,48 @@ class Personaje:
             
     def can_move(self, nueva_pos):
         celda_size = 50.0
-        x, z = nueva_pos[0], nueva_pos[2]
-        celda_x = int(round(x / celda_size)) + 7 
-        celda_z = int(round(z / celda_size)) + 6
+        cx, cz = nueva_pos[0], nueva_pos[2]
 
-        print(f"x={x:.1f}, z={z:.1f}, celda=({celda_z}, {celda_x})")
+        def check_collision_at_point(x, z):
+            celda_x = int(round(x / celda_size)) + 7 
+            celda_z = int(round(z / celda_size)) + 6
+            if celda_z < 0 or celda_z >= self.mapa.shape[0]:
+                return True
+            if celda_x < 0 or celda_x >= self.mapa.shape[1]:
+                return True
 
-        if celda_z < 0 or celda_z >= self.mapa.shape[0]:
+            if self.mapa[celda_z][celda_x] == 1:
+                return True
+            
             return False
-        if celda_x < 0 or celda_x >= self.mapa.shape[1]:
-            return False
+        
+        rad = self.bound_radio
+        ang_rad = math.radians(self.angulo_personaje)
+        c = math.cos(ang_rad)
+        s = math.sin(ang_rad)
+        
+        diag_rad = rad * 0.7
+        
+        offsets_locales = [
+            [0, rad],
+            [0, -rad],
+            [-rad, 0],
+            [rad, 0],
+            [-diag_rad, diag_rad],
+            [diag_rad, diag_rad],
+            [-diag_rad, -diag_rad],
+            [diag_rad, -diag_rad]
+        ]
+        
+        for ox_local, oz_local in offsets_locales:
+            x_offset_mundo = (ox_local * c) + (oz_local * s)
+            z_offset_mundo = (-ox_local * s) + (oz_local * c)
 
-        if self.mapa[celda_z][celda_x] == 1:
-            print("Bloqueado por muro")
-            return False
+            px = cx + x_offset_mundo
+            pz = cz + z_offset_mundo
+            
+            if check_collision_at_point(px, pz):
+                return False
 
         return True
     
