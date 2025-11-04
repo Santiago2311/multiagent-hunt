@@ -6,6 +6,7 @@ import math
 
 from objloader import OBJ
 from Personaje import Personaje
+from map import Mapa
 
 screen_width = 1200
 screen_height = 800
@@ -40,6 +41,7 @@ Z_MAX = 600
 
 # Objeto carrito
 personaje = None
+lab = None
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -117,6 +119,7 @@ def actualizar_vista():
 
 def Init():
     global personaje 
+    global lab
     
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
@@ -147,8 +150,11 @@ def Init():
     obj_personaje = OBJ("model/personaje.obj", swapyz=False)
     obj_brazo = OBJ("model/brazo.obj", swapyz=False)
     obj_pierna = OBJ("model/pierna.obj", swapyz=True)
+    generador = OBJ("model/generador.obj", swapyz=True)
+    
+    lab = Mapa(generador)
    
-    personaje = Personaje(obj_personaje, obj_brazo, obj_pierna)
+    personaje = Personaje(obj_personaje, obj_brazo, obj_pierna, lab.mat)
     
     print("\n=== CONTROLES ===")
     print("W: Avanzar")
@@ -167,6 +173,9 @@ def display():
     # Dibujar ejes y plano
     Axis()
     dibujar_plano()
+    
+    if lab:
+        lab.draw()
     
     # Dibujar el carrito
     if personaje:
