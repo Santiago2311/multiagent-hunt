@@ -5,6 +5,7 @@ from OpenGL.GLU import *
 import math
 
 from Personaje import Personaje
+from map import Mapa
 from PersonajeAgent import PersonajeAgent
 
 screen_width = 1200
@@ -38,6 +39,9 @@ Y_MAX = 300
 Z_MIN = -600
 Z_MAX = 600
 
+# Objeto carrito
+personaje = None
+lab = None
 humano = None
 personajes = None
 
@@ -116,6 +120,8 @@ def actualizar_vista():
     gluLookAt(EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z, UP_X, UP_Y, UP_Z)
 
 def Init():
+    global personaje 
+    global lab
     global personajes, humano 
     
     screen = pygame.display.set_mode(
@@ -144,6 +150,14 @@ def Init():
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
     glShadeModel(GL_SMOOTH)
     
+    obj_personaje = OBJ("model/personaje.obj", swapyz=False)
+    obj_brazo = OBJ("model/brazo.obj", swapyz=False)
+    obj_pierna = OBJ("model/pierna.obj", swapyz=True)
+    generador = OBJ("model/generador.obj", swapyz=True)
+    
+    lab = Mapa(generador)
+   
+    personaje = Personaje(obj_personaje, obj_brazo, obj_pierna, lab.mat)
     humano = Personaje()
     personajes = []
 
@@ -167,6 +181,9 @@ def display():
     # Dibujar ejes y plano
     Axis()
     dibujar_plano()
+    
+    if lab:
+        lab.draw()
     
     # Dibujar el carrito
     humano.draw()

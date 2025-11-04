@@ -5,6 +5,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 
 class Personaje:
+    def __init__(self, obj_personaje, obj_brazo, obj_pierna, mapa):
     def __init__(self):
         obj_personaje = OBJ("model/personaje.obj", swapyz=False)
         obj_brazo = OBJ("model/brazo.obj", swapyz=False)
@@ -12,6 +13,8 @@ class Personaje:
         self.torso = obj_personaje
         self.brazo = obj_brazo
         self.pierna = obj_pierna
+        
+        self.mapa = mapa
         
         self.posicion = np.array([0.0, 15.0, 0.0])  
         self.angulo_personaje = 0.0  
@@ -117,46 +120,71 @@ class Personaje:
         else:
             self.giro_brazo_der += self.velocidad_giro*factor
             self.giro_brazo_izq -= self.velocidad_giro*factor
+            
+    def can_move(self, nueva_pos):
+        celda_size = 50.0
+        x, z = nueva_pos[0], nueva_pos[2]
+        celda_x = int(round(x / celda_size)) + 7 
+        celda_z = int(round(z / celda_size)) + 6
+
+        print(f"x={x:.1f}, z={z:.1f}, celda=({celda_z}, {celda_x})")
+
+        if celda_z < 0 or celda_z >= self.mapa.shape[0]:
+            return False
+        if celda_x < 0 or celda_x >= self.mapa.shape[1]:
+            return False
+
+        if self.mapa[celda_z][celda_x] == 1:
+            print("Bloqueado por muro")
+            return False
+
+        return True
     
     def update(self):
         if self.estado == "AVANZAR":
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] += self.velocidad_avance * math.sin(rad)
-            self.posicion[2] += self.velocidad_avance * math.cos(rad)
+            nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])
+            if self.can_move(nueva_pos):
+                self.posicion = nueva_pos
             self.animation(1)
             
         elif self.estado == "RETROCEDER":
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] -= self.velocidad_avance/2 * math.sin(rad)
-            self.posicion[2] -= self.velocidad_avance/2 * math.cos(rad)
+            nueva_pos = self.posicion + np.array([-self.velocidad_avance/2 * math.sin(rad), 0, -self.velocidad_avance/2 * math.cos(rad)])
+            if self.can_move(nueva_pos):
+                self.posicion = nueva_pos
             self.animation(0.5)
             
         elif self.estado == "AVANZAR_GIRAR_IZQ":
             self.angulo_personaje += self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] += self.velocidad_avance * math.sin(rad)
-            self.posicion[2] += self.velocidad_avance * math.cos(rad)
+            nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])
+            if self.can_move(nueva_pos):
+                self.posicion = nueva_pos
             self.animation(1) 
 
         elif self.estado == "AVANZAR_GIRAR_DER":
             self.angulo_personaje -= self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] += self.velocidad_avance * math.sin(rad)
-            self.posicion[2] += self.velocidad_avance * math.cos(rad)
+            nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])
+            if self.can_move(nueva_pos):
+                self.posicion = nueva_pos
             self.animation(1)
             
         elif self.estado == "RETROCEDER_GIRAR_DER":
             self.angulo_personaje -= self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] -= self.velocidad_avance/2 * math.sin(rad)
-            self.posicion[2] -= self.velocidad_avance/2 * math.cos(rad)
+            nueva_pos = self.posicion + np.array([-self.velocidad_avance/2 * math.sin(rad), 0, -self.velocidad_avance/2 * math.cos(rad)])
+            if self.can_move(nueva_pos):
+                self.posicion = nueva_pos
             self.animation(0.5)
             
         elif self.estado == "RETROCEDER_GIRAR_IZQ":
             self.angulo_personaje += self.velocidad_giro
             rad = math.radians(self.angulo_personaje)
-            self.posicion[0] -= self.velocidad_avance/2 * math.sin(rad)
-            self.posicion[2] -= self.velocidad_avance/2 * math.cos(rad)
+            nueva_pos = self.posicion + np.array([-self.velocidad_avance/2 * math.sin(rad), 0, -self.velocidad_avance/2 * math.cos(rad)])
+            if self.can_move(nueva_pos):
+                self.posicion = nueva_pos
             self.animation(0.5)
             
         elif self.estado == "GIRAR_IZQ_ESTATICO":
