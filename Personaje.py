@@ -33,6 +33,7 @@ class Personaje:
         
         self.escala = 10.0
         self.animacion = False
+        self.animacionrepair = False
         
     def calcular_matriz_torso(self):
         """
@@ -118,6 +119,9 @@ class Personaje:
         else:
             self.giro_brazo_der += self.velocidad_giro*factor
             self.giro_brazo_izq -= self.velocidad_giro*factor
+
+    def repairing(self):
+        if self.giro_brazo_izq  
             
     def can_move(self, nueva_pos):
         celda_size = 50.0

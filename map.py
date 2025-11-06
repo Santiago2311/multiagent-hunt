@@ -38,6 +38,8 @@ class Mapa:
         self.num_generadores = 3
         self.posiciones = np.random.choice(len(genpos), self.num_generadores, replace=False)
         self.mat = np.array(mat)
+        self.gens = []
+        self.genpositions()
     
     def draw_cube(self, size=1.0):
         hs = size / 2.0
@@ -96,3 +98,11 @@ class Mapa:
             glScalef(5.0, 6.0, 5.0)
             self.generador.render()
             glPopMatrix()
+
+    def genpositions(self):
+        for idx in self.posiciones:
+            r, c = genpos[idx]
+            x = (c - self.centro[1]) * 50
+            z = (r - self.centro[0]) * 50
+            self.gens.append([x, z])
+

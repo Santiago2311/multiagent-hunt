@@ -128,22 +128,27 @@ class PersonajeAgent:
                     self.turn_left()
                 else:
                     self.turn_right()
+        else:
+            self.estado = "resting"
 
         self.angulo_personaje = angulo
 
     def turn_right(self):
         self.angulo_personaje -= self.velocidad_giro
         self.reset()
+        self.estado = "moving"
 
     def turn_left(self):
         self.angulo_personaje -= self.velocidad_giro
         self.reset()
+        self.estado = "moving"
 
     def forward(self):
         rad = math.radians(self.angulo_personaje)
         self.posicion[0] += self.velocidad_avance * math.sin(rad)
         self.posicion[2] += self.velocidad_avance * math.cos(rad)
         self.animation(1)
+        self.estado = "moving"
 
     def reset(self):
         if abs(self.giro_brazo_izq) > 0.5:

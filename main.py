@@ -3,6 +3,7 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import math
+import requests
 
 from Personaje import Personaje
 from map import Mapa
@@ -40,7 +41,6 @@ Z_MIN = -600
 Z_MAX = 600
 
 # Objeto carrito
-personaje = None
 lab = None
 humano = None
 personajes = None
@@ -146,7 +146,6 @@ def actualizar_vista():
     gluLookAt(EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z, UP_X, UP_Y, UP_Z)
 
 def Init():
-    global personaje 
     global lab
     global personajes, humano 
     
@@ -178,7 +177,6 @@ def Init():
     
     lab = Mapa()
    
-    personaje = Personaje(lab.mat)
     humano = Personaje(lab.mat)
     personajes = []
 
@@ -206,10 +204,12 @@ def display():
     if lab:
         lab.draw()
     
-    # Dibujar el carrito
-    humano.draw()
-    for personaje in personajes:
-        personaje.draw()
+    if humano:
+        humano.draw()
+
+    if personajes:
+        for personaje in personajes:
+            personaje.draw()
 
 def main():
     global camera_mode, personajes, humano 
@@ -259,6 +259,19 @@ def main():
             if humano.estado != estado_anterior:
                 print(f"Estado: {humano.estado}")
                 estado_anterior = humano.estado
+
+        moving = False
+        if personajes:
+            if all(bot.estado == "resting" for bot in personajes):
+                moving = False
+            else:
+                moving = True
+
+        if not moving:
+            res = requests.get("http://localhost:8000" + LOCATION)
+            data = res.json()
+        for personaje in personajes:
+            personaje.update(data)
         
         display()
         
