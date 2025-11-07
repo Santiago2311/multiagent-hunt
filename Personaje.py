@@ -13,7 +13,8 @@ class Personaje:
         self.brazo = obj_brazo
         self.pierna = obj_pierna
         
-        self.mapa = mapa
+        self.mapa = mapa.mat
+        self.mapa = mapa.gens
         self.bound_radio = 10
         
         self.posicion = np.array([0.0, 15.0, 0.0])  
@@ -121,8 +122,28 @@ class Personaje:
             self.giro_brazo_izq -= self.velocidad_giro*factor
 
     def repairing(self):
-        if self.giro_brazo_izq  
+        if self.giro_brazo_izq:
+            None
             
+    def generator_close(self, nueva_pos):
+        celda_size = 50.0
+        cx, cz = nueva_pos[0], nueva_pos[2]
+        
+        rad = self.bound_radio
+        ang_rad = math.radians(self.angulo_personaje)
+        c = math.cos(ang_rad)
+        s = math.sin(ang_rad)
+        
+        diag_rad = rad * 0.7
+        
+        gen_size = 50.0
+        
+        for gx, gz in self.gens:
+            if abs(cx - gx) < (gen_size/2 + rad) and abs(cz - gz) < (gen_size/2 + rad):
+                return True
+
+        return False
+    
     def can_move(self, nueva_pos):
         celda_size = 50.0
         cx, cz = nueva_pos[0], nueva_pos[2]
@@ -167,6 +188,9 @@ class Personaje:
             
             if check_collision_at_point(px, pz):
                 return False
+        
+        if self.generator_close(nueva_pos):
+            return False
 
         return True
     

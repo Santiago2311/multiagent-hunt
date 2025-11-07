@@ -177,7 +177,7 @@ def Init():
     
     lab = Mapa()
    
-    humano = Personaje(lab.mat)
+    humano = Personaje(lab)
     personajes = []
 
     for i in range(4):
