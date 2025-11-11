@@ -239,35 +239,41 @@ model = ABM(Union{DoorAgent, GeneratorAgent, EscapistAgent, SaboteurAgent}, spac
 
 exit_door = DoorAgent(1, (12, 12), false)
 @assert is_walkable(exit_door.pos) "Exit door must be on a walkable cell"
-add_agent_pos!(exit_door, model)
+add_agent_own_pos!(exit_door, model)
 
 gen1 = GeneratorAgent(2, (3, 5), 5, false)
 @assert is_walkable(gen1.pos)
-add_agent_pos!(gen1, model)
+add_agent_own_pos!(gen1, model)
 
 gen2 = GeneratorAgent(3, (8, 7), 5, false)
 @assert is_walkable(gen2.pos)
-add_agent_pos!(gen2, model)
+add_agent_own_pos!(gen2, model)
 
 gen3 = GeneratorAgent(4, (11, 8), 5, false)
 @assert is_walkable(gen3.pos)
-add_agent_pos!(gen3, model)
+add_agent_own_pos!(gen3, model)
 
 esc1 = EscapistAgent(5, (2, 2), 1, false, false, nothing)
 @assert is_walkable(esc1.pos)
-add_agent_pos!(esc1, model)
+add_agent_own_pos!(esc1, model)
 
 esc2 = EscapistAgent(6, (2, 4), 1, false, false, nothing)
 @assert is_walkable(esc2.pos)
-add_agent_pos!(esc2, model)
+add_agent_own_pos!(esc2, model)
 
 esc3 = EscapistAgent(7, (4, 2), 1, false, false, nothing)
 @assert is_walkable(esc3.pos)
-add_agent_pos!(esc3, model)
+add_agent_own_pos!(esc3, model)
 
-sab1 = SaboteurAgent(8, (7, 7), 1, [exit_door.id])
+sab1 = SaboteurAgent(8, (10, 10), 1, [exit_door.id])
 @assert is_walkable(sab1.pos)
-add_agent_pos!(sab1, model)
+add_agent_own_pos!(sab1, model)
+
+# NEW: Step individual agent by ID
+function step_agent_by_id(agent_id::Int)
+    agent = model[agent_id]
+    agent_step!(agent, model)
+end
 
 function simulate_step()
     step!(model)
@@ -311,4 +317,40 @@ function get_model_state()
     end
     
     return state
+end
+
+# NEW: Get specific agent's state
+function get_agent_state(agent_id::Int)
+    agent = model[agent_id]
+    
+    if agent isa EscapistAgent
+        return Dict(
+            "type" => "escapist",
+            "id" => agent.id,
+            "pos" => agent.pos,
+            "hasEscaped" => agent.hasEscaped,
+            "knowsExit" => agent.knowsExitLocation
+        )
+    elseif agent isa GeneratorAgent
+        return Dict(
+            "type" => "generator",
+            "id" => agent.id,
+            "pos" => agent.pos,
+            "isFixed" => agent.isFixed,
+            "timeToFix" => agent.timeToFix
+        )
+    elseif agent isa SaboteurAgent
+        return Dict(
+            "type" => "saboteur",
+            "id" => agent.id,
+            "pos" => agent.pos
+        )
+    elseif agent isa DoorAgent
+        return Dict(
+            "type" => "door",
+            "id" => agent.id,
+            "pos" => agent.pos,
+            "isOpen" => agent.isOpen
+        )
+    end
 end

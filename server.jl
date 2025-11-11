@@ -1,4 +1,4 @@
-using Genie, Genie.Router, Genie.Renderer.Json
+using Genie, Genie.Router, Genie.Renderer.Json, Genie.Requests
 
 include("game.jl")
 
@@ -15,6 +15,29 @@ end
 route("/state", method = GET) do
     state = get_model_state()
     return json(state)
+end
+
+# NEW: Step a specific agent by ID
+route("/agent/:id/step", method = POST) do
+    agent_id = parse(Int, payload(:id))
+    try
+        step_agent_by_id(agent_id)
+        agent_state = get_agent_state(agent_id)
+        return json(Dict("status" => "agent stepped", "agent" => agent_state))
+    catch e
+        return json(Dict("error" => "Agent not found or error: $e"), status = 404)
+    end
+end
+
+# NEW: Get specific agent's state
+route("/agent/:id", method = GET) do
+    agent_id = parse(Int, payload(:id))
+    try
+        agent_state = get_agent_state(agent_id)
+        return json(agent_state)
+    catch e
+        return json(Dict("error" => "Agent not found: $e"), status = 404)
+    end
 end
 
 Genie.config.run_as_server = true

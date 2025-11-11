@@ -13,8 +13,9 @@ class Personaje:
         self.brazo = obj_brazo
         self.pierna = obj_pierna
         
+        # FIXED: Don't overwrite mapa.mat with mapa.gens
         self.mapa = mapa.mat
-        self.mapa = mapa.gens
+        self.gens = mapa.gens  # Store generators separately
         self.bound_radio = 10
         
         self.posicion = np.array([0.0, 15.0, 0.0])  

@@ -24,15 +24,12 @@ CENTER_Y = 0
 CENTER_Z = 0
 UP_X = 0
 UP_Y = 1
-
 UP_Z = 0
 
-camera_mode = "ADELANTE"  
+camera_mode = "ADELANTE"
 
-# Dimensión del plano
 DimBoard = 500
 
-# Variables para los ejes
 X_MIN = -600
 X_MAX = 600
 Y_MIN = -100
@@ -40,7 +37,6 @@ Y_MAX = 300
 Z_MIN = -600
 Z_MAX = 600
 
-# Objeto carrito
 lab = None
 humano = None
 personajes = None
@@ -77,11 +73,9 @@ def dibujar_plano():
     glVertex3d(-DimBoard, 0, -DimBoard)
     glVertex3d(-DimBoard, 0, DimBoard)
     glVertex3d(DimBoard, 0, DimBoard)
-
     glVertex3d(DimBoard, 0, -DimBoard)
     glEnd()
     
-    # Líneas de cuadrícula
     glColor3f(0.3, 0.3, 0.3)
     glBegin(GL_LINES)
     grid_size = 50
@@ -102,7 +96,6 @@ def celda_mapa(x, z, lab):
     if 0 <= celda_z < lab.mat.shape[0] and 0 <= celda_x < lab.mat.shape[1]:
         return lab.mat[celda_z][celda_x]
     return 1 
-
 
 def actualizar_camara_seguimiento(side):
     global EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z, lab
@@ -180,8 +173,11 @@ def Init():
     humano = Personaje(lab)
     personajes = []
 
-    for i in range(4):
-        personajes.append(PersonajeAgent())
+    #esc1 = id 5, esc2 = id 6, esc3 = id 7, sab1 = id 8
+    personajes.append(PersonajeAgent(agent_id=5))  # Escapist 1
+    personajes.append(PersonajeAgent(agent_id=6))  # Escapist 2
+    personajes.append(PersonajeAgent(agent_id=7))  # Escapist 3
+    personajes.append(PersonajeAgent(agent_id=8))  # Saboteur 1
     
     print("\n=== CONTROLES ===")
     print("W: Avanzar")
@@ -193,11 +189,12 @@ def Init():
     print("\nCÁMARA:")
     print("C: Cambiar modo de cámara (Adelante/Atrás)")
     print("\nESC: Salir")
+    print("\n=== AGENTES ===")
+    print(f"Loaded {len(personajes)} agents from Julia server")
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
-    # Dibujar ejes y plano
     Axis()
     dibujar_plano()
     
@@ -229,7 +226,6 @@ def main():
     
     estado_anterior = ""
     
-
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -238,7 +234,6 @@ def main():
                 if event.key == pygame.K_ESCAPE:
                     done = True
                 elif event.key == pygame.K_c:
-                    # Cambiar modo de cámara
                     camera_mode = "ATRAS" if camera_mode == "ADELANTE" else "ADELANTE"
                     print(f"Modo de cámara: {camera_mode}")
         
@@ -260,24 +255,17 @@ def main():
                 print(f"Estado: {humano.estado}")
                 estado_anterior = humano.estado
 
-        moving = False
         if personajes:
-            if all(bot.estado == "resting" for bot in personajes):
-                moving = False
-            else:
-                moving = True
-
-        if not moving:
-            res = requests.get("http://localhost:8000" + LOCATION)
-            data = res.json()
-        for personaje in personajes:
-            personaje.update(data)
+            for personaje in personajes:
+                personaje.update()
         
         display()
         
         pygame.display.flip()
-        clock.tick(60)  # 60 FPS
+        clock.tick(60)
     
     pygame.quit()
+
+import numpy as np
 
 main()
