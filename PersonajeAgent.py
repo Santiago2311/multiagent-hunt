@@ -36,6 +36,9 @@ class PersonajeAgent:
         
         self.target_pos = None
         self.moving_to_target = False
+
+        self.turning = False
+        self.angle_to_target = 0.0
         
         self.init_position_from_server()
         
@@ -140,20 +143,29 @@ class PersonajeAgent:
         
         if self.moving_to_target and self.target_pos is not None:
             diff = self.target_pos - self.posicion
-            diff[1] = 0  # Don't move in Y direction
+            #diff[1] = 0  # Don't move in Y direction
             distance = np.linalg.norm(diff)
             
             if distance > 1.0:  # Still moving
-                if abs(diff[0]) > 0.01 or abs(diff[2]) > 0.01:
-                    angle_to_target = math.degrees(math.atan2(diff[0], diff[2]))
-                    self.angulo_personaje = angle_to_target
+                if abs(diff[0]) > 0.01 or abs(diff[2]) > 0.01 and not self.turning:
+                    self.angle_to_target = (math.degrees(math.atan2(diff[0], diff[2])) + 360) % 360                    #self.angulo_personaje = angle_to_target
+                    #self.angle_to_target -= self.angle_to_target % 90
+                    self.angle_to_target = round(self.angle_to_target / 90) * 90
+                    self.angle_to_target %= 360
+                    self.angulo_personaje = abs(self.angulo_personaje) % 360
+                    self.turning = True
                 
-                direction = diff / distance
-                move_amount = min(self.velocidad_avance, distance)
-                self.posicion += direction * move_amount
+                if self.turning and self.angulo_personaje != self.angle_to_target:
+                    self.angulo_personaje += self.velocidad_giro
+                    if self.angulo_personaje == self.angle_to_target:
+                        self.turning = False
+                else:
+                    direction = diff / distance
+                    move_amount = min(self.velocidad_avance, distance)
+                    self.posicion += direction * move_amount
                 
-                self.animation(1)
-                self.estado = "moving"
+                    self.animation(1)
+                    self.estado = "moving"
             else:  # Reached target
                 self.posicion = self.target_pos.copy()
                 self.moving_to_target = False
