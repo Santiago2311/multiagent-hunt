@@ -31,6 +31,15 @@ mutable struct SaboteurAgent <: AbstractAgent
     controlledDoors::Vector{Int}
 end
 
+mutable struct HumanAgent <: AbstractAgent
+    id::Int
+    pos::NTuple{2, Int}
+    fixingSpeed::Int
+    hasEscaped::Bool
+    knowsExitLocation::Bool
+    exitLocation::Union{Nothing, NTuple{2, Int}}
+end
+
 const GRID_DIMS = (13, 13)
 
 const MAZE = [
@@ -231,9 +240,13 @@ end
 function agent_step!(agent::DoorAgent, model)
 end
 
+function agent_step!(agent::HumanAgent, model)
+end
+
+
 space = GridSpace(GRID_DIMS; periodic = false, metric = :manhattan)
 
-model = ABM(Union{DoorAgent, GeneratorAgent, EscapistAgent, SaboteurAgent}, space; agent_step! = agent_step!, warn = false)
+model = ABM(Union{DoorAgent, GeneratorAgent, EscapistAgent, SaboteurAgent, HumanAgent}, space; agent_step! = agent_step!, warn = false)
 
 @assert is_walkable(SPAWN_POS) "Spawn point must be on a walkable cell"
 
@@ -313,6 +326,13 @@ function get_model_state()
                 "pos" => agent.pos,
                 "isOpen" => agent.isOpen
             ))
+        elseif agent isa HumanAgent
+            state["human"] = Dict(
+                "id" => agent.id,
+                "pos" => agent.pos,
+                "hasEscaped" => agent.hasEscaped,
+                "knowsExit" => agent.knowsExitLocation
+            )
         end
     end
     
@@ -352,5 +372,24 @@ function get_agent_state(agent_id::Int)
             "pos" => agent.pos,
             "isOpen" => agent.isOpen
         )
+    elseif agent isa HumanAgent
+        return Dict(
+            "type" => "human",
+            "id" => agent.id,
+            "pos" => agent.pos,
+            "hasEscaped" => agent.hasEscaped,
+            "knowsExit" => agent.knowsExitLocation
+        )
     end
+end
+
+function update_human_position(new_pos::NTuple{2, Int})
+    human = model[9]
+    if human isa HumanAgent
+        if is_walkable(new_pos)
+            move_agent!(human, new_pos, model)
+            return true
+        end
+    end
+    return false
 end

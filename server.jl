@@ -40,6 +40,26 @@ route("/agent/:id", method = GET) do
     end
 end
 
+route("/human/position", method = POST) do
+    try
+        body = Genie.Requests.jsonpayload()
+        grid_x = body["x"]
+        grid_y = body["y"]
+        new_pos = (grid_x, grid_y)
+        
+        success = update_human_position(new_pos)
+        if success
+            human_state = get_agent_state(9)
+            return json(Dict("status" => "position updated", "human" => human_state))
+        else
+            return json(Dict("error" => "Invalid position"), status = 400)
+        end
+    catch e
+        println("Error updating human position: $e")
+        return json(Dict("error" => "Failed to update position: $e"), status = 400)
+    end
+end
+
 Genie.config.run_as_server = true
 Genie.config.cors_headers["Access-Control-Allow-Origin"] = "*"
 Genie.config.cors_headers["Access-Control-Allow-Headers"] = "Content-Type"

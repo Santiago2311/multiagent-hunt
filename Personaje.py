@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import requests
 from objloader import OBJ 
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -36,6 +37,34 @@ class Personaje:
         self.escala = 10.0
         self.animacion = False
         self.animacionrepair = False
+
+        self.base_url = "http://localhost:8000"
+        self.last_sent_grid_pos = None
+
+    def world_to_grid(self, world_x, world_z):
+        center_col = 7
+        center_row = 6
+        cell_size = 50.0
+        
+        grid_x = int(round(world_x / cell_size)) + center_col
+        grid_y = int(round(world_z / cell_size)) + center_row
+        
+        return grid_x, grid_y
+        
+    def send_position_to_server(self):
+        grid_x, grid_y = self.world_to_grid(self.posicion[0], self.posicion[2])
+        
+        if self.last_sent_grid_pos != (grid_x, grid_y):
+            try:
+                response = requests.post(
+                    f"{self.base_url}/human/position",
+                    json={"x": grid_x, "y": grid_y},
+                    timeout=0.1
+                )
+                if response.status_code == 200:
+                    self.last_sent_grid_pos = (grid_x, grid_y)
+            except:
+                pass
         
     def calcular_matriz_torso(self):
         """
@@ -201,6 +230,7 @@ class Personaje:
             nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])
             if self.can_move(nueva_pos):
                 self.posicion = nueva_pos
+                self.send_position_to_server()
             self.animation(1)
             
         elif self.estado == "RETROCEDER":
@@ -208,6 +238,7 @@ class Personaje:
             nueva_pos = self.posicion + np.array([-self.velocidad_avance/2 * math.sin(rad), 0, -self.velocidad_avance/2 * math.cos(rad)])
             if self.can_move(nueva_pos):
                 self.posicion = nueva_pos
+                self.send_position_to_server()
             self.animation(0.5)
             
         elif self.estado == "AVANZAR_GIRAR_IZQ":
@@ -216,6 +247,7 @@ class Personaje:
             nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])
             if self.can_move(nueva_pos):
                 self.posicion = nueva_pos
+                self.send_position_to_server()
             self.animation(1) 
 
         elif self.estado == "AVANZAR_GIRAR_DER":
@@ -224,6 +256,7 @@ class Personaje:
             nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])
             if self.can_move(nueva_pos):
                 self.posicion = nueva_pos
+                self.send_position_to_server()
             self.animation(1)
             
         elif self.estado == "RETROCEDER_GIRAR_DER":
@@ -232,6 +265,7 @@ class Personaje:
             nueva_pos = self.posicion + np.array([-self.velocidad_avance/2 * math.sin(rad), 0, -self.velocidad_avance/2 * math.cos(rad)])
             if self.can_move(nueva_pos):
                 self.posicion = nueva_pos
+                self.send_position_to_server()
             self.animation(0.5)
             
         elif self.estado == "RETROCEDER_GIRAR_IZQ":
@@ -240,6 +274,7 @@ class Personaje:
             nueva_pos = self.posicion + np.array([-self.velocidad_avance/2 * math.sin(rad), 0, -self.velocidad_avance/2 * math.cos(rad)])
             if self.can_move(nueva_pos):
                 self.posicion = nueva_pos
+                self.send_position_to_server()
             self.animation(0.5)
             
         elif self.estado == "GIRAR_IZQ_ESTATICO":
