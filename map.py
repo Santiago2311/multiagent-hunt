@@ -132,6 +132,7 @@ class Mapa:
             glPushMatrix()
             glTranslatef(x * 50, 0.0, z * 50)
             glScalef(5.0, 6.0, 5.0)
+            glBindTexture(GL_TEXTURE_2D, 0)
             self.generador.render()
             glPopMatrix()
 

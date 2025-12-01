@@ -324,6 +324,7 @@ def display():
     if lab:
         lab.draw()
 
+    glBindTexture(GL_TEXTURE_2D, 0)
     if humano:
         humano.draw()
 
