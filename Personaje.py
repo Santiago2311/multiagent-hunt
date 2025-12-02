@@ -14,7 +14,6 @@ class Personaje:
         self.brazo = obj_brazo
         self.pierna = obj_pierna
         
-        # FIXED: Don't overwrite mapa.mat with mapa.gens
         self.mapa = mapa.mat
         self.gens = mapa.gens  # Store generators separately
         self.bound_radio = 10
@@ -40,16 +39,27 @@ class Personaje:
 
         self.base_url = "http://localhost:8000"
         self.last_sent_grid_pos = None
+        self.caught = False
 
     def world_to_grid(self, world_x, world_z):
-        center_col = 7
-        center_row = 6
+        center_col = 8
+        center_row = 7
         cell_size = 50.0
         
         grid_x = int(round(world_x / cell_size)) + center_col
         grid_y = int(round(world_z / cell_size)) + center_row
         
         return grid_x, grid_y
+    
+    def grid_to_world(self, grid_x, grid_y):
+        center_col = 7 
+        center_row = 6
+        cell_size = 50.0
+        
+        world_x = (grid_x - center_col) * cell_size
+        world_z = (grid_y - center_row) * cell_size
+        
+        return world_x, world_z
         
     def send_position_to_server(self):
         grid_x, grid_y = self.world_to_grid(self.posicion[0], self.posicion[2])
@@ -65,6 +75,28 @@ class Personaje:
                     self.last_sent_grid_pos = (grid_x, grid_y)
             except:
                 pass
+    
+    def check_server_position(self):
+        try:
+            response = requests.get(
+                f"{self.base_url}/human/position",
+                timeout=0.1
+            )
+            if response.status_code == 200:
+                data = response.json()
+                server_grid_pos = tuple(data.get("pos", []))
+                current_grid_pos = self.world_to_grid(self.posicion[0], self.posicion[2])
+                
+                if server_grid_pos and server_grid_pos != current_grid_pos:
+                    world_x, world_z = self.grid_to_world(server_grid_pos[0], server_grid_pos[1])
+                    self.posicion = np.array([world_x, 15.0, world_z])
+                    self.caught = True
+                    self.last_sent_grid_pos = server_grid_pos
+                    print("Player was caught! Respawning at safe zone.")
+                    return True
+        except:
+            pass
+        return False
         
     def calcular_matriz_torso(self):
         """
@@ -225,6 +257,8 @@ class Personaje:
         return True
     
     def update(self):
+        self.check_server_position()
+        
         if self.estado == "AVANZAR":
             rad = math.radians(self.angulo_personaje)
             nueva_pos = self.posicion + np.array([self.velocidad_avance * math.sin(rad), 0, self.velocidad_avance * math.cos(rad)])

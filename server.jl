@@ -17,7 +17,7 @@ route("/state", method = GET) do
     return json(state)
 end
 
-# NEW: Step a specific agent by ID
+# Step a specific agent by ID
 route("/agent/:id/step", method = POST) do
     agent_id = parse(Int, payload(:id))
     try
@@ -29,7 +29,7 @@ route("/agent/:id/step", method = POST) do
     end
 end
 
-# NEW: Get specific agent's state
+# Get specific agent's state
 route("/agent/:id", method = GET) do
     agent_id = parse(Int, payload(:id))
     try
@@ -40,6 +40,7 @@ route("/agent/:id", method = GET) do
     end
 end
 
+# Update human position
 route("/human/position", method = POST) do
     try
         body = Genie.Requests.jsonpayload()
@@ -57,6 +58,21 @@ route("/human/position", method = POST) do
     catch e
         println("Error updating human position: $e")
         return json(Dict("error" => "Failed to update position: $e"), status = 400)
+    end
+end
+
+# Get human position
+route("/human/position", method = GET) do
+    try
+        pos = get_human_position()
+        if pos !== nothing
+            return json(Dict("pos" => [pos[1], pos[2]]))
+        else
+            return json(Dict("error" => "Human not found"), status = 404)
+        end
+    catch e
+        println("Error getting human position: $e")
+        return json(Dict("error" => "Failed to get position: $e"), status = 400)
     end
 end
 

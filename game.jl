@@ -59,7 +59,7 @@ const MAZE = [
 ]
 
 # spawn safe zone
-const SPAWN_POS = (5, 5)
+const SPAWN_POS = (7, 8)
 const SAFE_RADIUS = 1
 in_safe_zone(pos::NTuple{2,Int}) = abs(pos[1] - SPAWN_POS[1]) <= SAFE_RADIUS && abs(pos[2] - SPAWN_POS[2]) <= SAFE_RADIUS
 
@@ -145,6 +145,9 @@ function inform_exit_location!(exit_pos::NTuple{2, Int}, model)
         if agent isa EscapistAgent && !agent.hasEscaped
             agent.knowsExitLocation = true
             agent.exitLocation = exit_pos
+        elseif agent isa HumanAgent && !agent.hasEscaped
+            agent.knowsExitLocation = true
+            agent.exitLocation = exit_pos
         end
     end
 end
@@ -211,25 +214,30 @@ function agent_step!(agent::EscapistAgent, model)
 end
 
 function agent_step!(agent::SaboteurAgent, model)
-    nearest_escapist = nothing
+    nearest_target = nothing
     min_distance = Inf
     
     for a in allagents(model)
-        if a isa EscapistAgent && !a.hasEscaped && !in_safe_zone(a.pos)
+        if (a isa EscapistAgent && !a.hasEscaped && !in_safe_zone(a.pos)) || 
+           (a isa HumanAgent && !a.hasEscaped && !in_safe_zone(a.pos))
             dist = manhattan_distance(agent.pos, a.pos)
             if dist < min_distance
                 min_distance = dist
-                nearest_escapist = a
+                nearest_target = a
             end
         end
     end
     
-    if nearest_escapist !== nothing
-        if is_adjacent(agent.pos, nearest_escapist.pos)
-            println("Saboteur $(agent.id) caught Escapist $(nearest_escapist.id)!")
-            move_agent!(nearest_escapist, SPAWN_POS, model)
+    if nearest_target !== nothing
+        if is_adjacent(agent.pos, nearest_target.pos)
+            if nearest_target isa EscapistAgent
+                println("Saboteur $(agent.id) caught Escapist $(nearest_target.id)!")
+            elseif nearest_target isa HumanAgent
+                println("Saboteur $(agent.id) caught Human Player $(nearest_target.id)!")
+            end
+            move_agent!(nearest_target, SPAWN_POS, model)
         else
-            move_towards_target!(agent, nearest_escapist.pos, model)
+            move_towards_target!(agent, nearest_target.pos, model)
         end
     end
 end
@@ -282,7 +290,11 @@ sab1 = SaboteurAgent(8, (10, 10), 1, [exit_door.id])
 @assert is_walkable(sab1.pos)
 add_agent_own_pos!(sab1, model)
 
-# NEW: Step individual agent by ID
+human = HumanAgent(9, SPAWN_POS, 1, false, false, nothing)
+@assert is_walkable(human.pos)
+add_agent_own_pos!(human, model)
+
+# Step individual agent by ID
 function step_agent_by_id(agent_id::Int)
     agent = model[agent_id]
     agent_step!(agent, model)
@@ -339,7 +351,7 @@ function get_model_state()
     return state
 end
 
-# NEW: Get specific agent's state
+# Get specific agent's state
 function get_agent_state(agent_id::Int)
     agent = model[agent_id]
     
@@ -392,4 +404,12 @@ function update_human_position(new_pos::NTuple{2, Int})
         end
     end
     return false
+end
+
+function get_human_position()
+    human = model[9]
+    if human isa HumanAgent
+        return human.pos
+    end
+    return nothing
 end
