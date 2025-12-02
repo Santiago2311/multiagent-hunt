@@ -305,43 +305,44 @@ function simulate_step()
 end
 
 function get_model_state()
-    state = Dict(
-        "escapists" => [],
-        "generators" => [],
-        "saboteurs" => [],
-        "doors" => []
+    state = Dict{String, Any}(
+        "escapists" => Vector{Dict{String, Any}}(),
+        "generators" => Vector{Dict{String, Any}}(),
+        "saboteurs" => Vector{Dict{String, Any}}(),
+        "doors" => Vector{Dict{String, Any}}(),
+        "human" => Dict{String, Any}()
     )
     
     for agent in allagents(model)
         if agent isa EscapistAgent
-            push!(state["escapists"], Dict(
+            push!(state["escapists"], Dict{String, Any}(
                 "id" => agent.id,
-                "pos" => agent.pos,
+                "pos" => [agent.pos[1], agent.pos[2]],
                 "hasEscaped" => agent.hasEscaped,
                 "knowsExit" => agent.knowsExitLocation
             ))
         elseif agent isa GeneratorAgent
-            push!(state["generators"], Dict(
+            push!(state["generators"], Dict{String, Any}(
                 "id" => agent.id,
-                "pos" => agent.pos,
+                "pos" => [agent.pos[1], agent.pos[2]],
                 "isFixed" => agent.isFixed,
                 "timeToFix" => agent.timeToFix
             ))
         elseif agent isa SaboteurAgent
-            push!(state["saboteurs"], Dict(
+            push!(state["saboteurs"], Dict{String, Any}(
                 "id" => agent.id,
-                "pos" => agent.pos
+                "pos" => [agent.pos[1], agent.pos[2]]
             ))
         elseif agent isa DoorAgent
-            push!(state["doors"], Dict(
+            push!(state["doors"], Dict{String, Any}(
                 "id" => agent.id,
-                "pos" => agent.pos,
+                "pos" => [agent.pos[1], agent.pos[2]],
                 "isOpen" => agent.isOpen
             ))
         elseif agent isa HumanAgent
-            state["human"] = Dict(
+            state["human"] = Dict{String, Any}(
                 "id" => agent.id,
-                "pos" => agent.pos,
+                "pos" => [agent.pos[1], agent.pos[2]],
                 "hasEscaped" => agent.hasEscaped,
                 "knowsExit" => agent.knowsExitLocation
             )
@@ -359,7 +360,7 @@ function get_agent_state(agent_id::Int)
         return Dict(
             "type" => "escapist",
             "id" => agent.id,
-            "pos" => agent.pos,
+            "pos" => [agent.pos[1], agent.pos[2]],
             "hasEscaped" => agent.hasEscaped,
             "knowsExit" => agent.knowsExitLocation
         )
@@ -367,7 +368,7 @@ function get_agent_state(agent_id::Int)
         return Dict(
             "type" => "generator",
             "id" => agent.id,
-            "pos" => agent.pos,
+            "pos" => [agent.pos[1], agent.pos[2]],
             "isFixed" => agent.isFixed,
             "timeToFix" => agent.timeToFix
         )
@@ -375,20 +376,20 @@ function get_agent_state(agent_id::Int)
         return Dict(
             "type" => "saboteur",
             "id" => agent.id,
-            "pos" => agent.pos
+            "pos" => [agent.pos[1], agent.pos[2]]
         )
     elseif agent isa DoorAgent
         return Dict(
             "type" => "door",
             "id" => agent.id,
-            "pos" => agent.pos,
+            "pos" => [agent.pos[1], agent.pos[2]],
             "isOpen" => agent.isOpen
         )
     elseif agent isa HumanAgent
         return Dict(
             "type" => "human",
             "id" => agent.id,
-            "pos" => agent.pos,
+            "pos" => [agent.pos[1], agent.pos[2]],
             "hasEscaped" => agent.hasEscaped,
             "knowsExit" => agent.knowsExitLocation
         )

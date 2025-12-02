@@ -40,6 +40,8 @@ class Personaje:
         self.base_url = "http://localhost:8000"
         self.last_sent_grid_pos = None
         self.caught = False
+        self.has_escaped = False
+        self.frame_count = 0
 
     def world_to_grid(self, world_x, world_z):
         center_col = 8
@@ -94,6 +96,30 @@ class Personaje:
                     self.last_sent_grid_pos = server_grid_pos
                     print("Player was caught! Respawning at safe zone.")
                     return True
+        except:
+            pass
+        return False
+    
+    def check_door_escape(self):
+        try:
+            response = requests.get(f"{self.base_url}/state", timeout=0.1)
+            if response.status_code == 200:
+                state = response.json()
+                doors = state.get("doors", [])
+                generators = state.get("generators", [])
+                
+                all_fixed = all(gen.get("isFixed", False) for gen in generators)
+                
+                if all_fixed:
+                    grid_x, grid_y = self.world_to_grid(self.posicion[0], self.posicion[2])
+                    
+                    for door in doors:
+                        door_pos = door.get("pos", [])
+                        if door_pos and door_pos[0] == grid_x and door_pos[1] == grid_y:
+                            if door.get("isOpen", False):
+                                self.has_escaped = True
+                                print("YOU ESCAPED! YOU WIN!")
+                                return True
         except:
             pass
         return False
@@ -257,7 +283,11 @@ class Personaje:
         return True
     
     def update(self):
+        if self.has_escaped:
+            return
+            
         self.check_server_position()
+        self.check_door_escape()
         
         if self.estado == "AVANZAR":
             rad = math.radians(self.angulo_personaje)

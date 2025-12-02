@@ -255,6 +255,90 @@ def actualizar_vista():
               CENTER_Y, CENTER_Z, UP_X, UP_Y, UP_Z)
 
 
+def get_generator_count():
+    try:
+        response = requests.get("http://localhost:8000/state", timeout=0.1)
+        if response.status_code == 200:
+            state = response.json()
+            generators = state.get("generators", [])
+            total = len(generators)
+            fixed = sum(1 for gen in generators if gen.get("isFixed", False))
+            return fixed, total
+    except:
+        pass
+    return 0, 0
+
+
+def draw_text_2d(text, x, y, font_size=36):
+    """Draw 2D text overlay using OpenGL"""
+    # Save the current matrices
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    glOrtho(0, screen_width, screen_height, 0, -1, 1)
+    
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    # Disable depth test and lighting for 2D overlay
+    glDisable(GL_DEPTH_TEST)
+    glDisable(GL_LIGHTING)
+    
+    # Draw background rectangle
+    glColor4f(0.0, 0.0, 0.0, 0.7)
+    glBegin(GL_QUADS)
+    glVertex2f(x - 10, y - 5)
+    glVertex2f(x + len(text) * font_size * 0.6 + 10, y - 5)
+    glVertex2f(x + len(text) * font_size * 0.6 + 10, y + font_size + 5)
+    glVertex2f(x - 10, y + font_size + 5)
+    glEnd()
+    
+    # Render text using pygame font to texture
+    font = pygame.font.Font(None, font_size)
+    text_surface = font.render(text, True, (255, 255, 255))
+    text_data = pygame.image.tostring(text_surface, "RGBA", False)
+    
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    glEnable(GL_TEXTURE_2D)
+    
+    # Create texture from text
+    text_texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, text_texture)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text_surface.get_width(), 
+                 text_surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
+    
+    # Draw textured quad
+    glColor4f(1.0, 1.0, 1.0, 1.0)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0)
+    glVertex2f(x, y)
+    glTexCoord2f(1, 0)
+    glVertex2f(x + text_surface.get_width(), y)
+    glTexCoord2f(1, 1)
+    glVertex2f(x + text_surface.get_width(), y + text_surface.get_height())
+    glTexCoord2f(0, 1)
+    glVertex2f(x, y + text_surface.get_height())
+    glEnd()
+    
+    glDeleteTextures([text_texture])
+    glDisable(GL_TEXTURE_2D)
+    glDisable(GL_BLEND)
+    
+    # Restore settings
+    glEnable(GL_DEPTH_TEST)
+    glEnable(GL_LIGHTING)
+    
+    # Restore matrices
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+    glPopMatrix()
+
+
 def Init():
     global lab
     global personajes, humano
@@ -313,8 +397,10 @@ def Init():
     print("\n=== AGENTES ===")
     print(f"Loaded {len(personajes)} agents from Julia server")
 
+    return screen
 
-def display():
+
+def display(fixed, total):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     dibujar_skybox()
@@ -331,13 +417,16 @@ def display():
     if personajes:
         for personaje in personajes:
             personaje.draw()
+    
+    # Draw overlay text
+    draw_text_2d(f"Generators: {fixed}/{total}", 20, 20, 48)
 
 
 def main():
     global camera_mode, personajes, humano
 
     pygame.init()
-    Init()
+    screen = Init()
 
     clock = pygame.time.Clock()
     done = False
@@ -350,6 +439,8 @@ def main():
     }
 
     estado_anterior = ""
+    frame_count = 0
+    fixed, total = 0, 0
 
     while not done:
         for event in pygame.event.get():
@@ -383,8 +474,14 @@ def main():
         if personajes:
             for personaje in personajes:
                 personaje.update()
+        
+        # Update generator count every second
+        frame_count += 1
+        if frame_count % 60 == 0:
+            fixed, total = get_generator_count()
+            frame_count = 0
 
-        display()
+        display(fixed, total)
 
         pygame.display.flip()
         clock.tick(60)
