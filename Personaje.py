@@ -14,8 +14,8 @@ class Personaje:
         self.brazo = obj_brazo
         self.pierna = obj_pierna
         
+        self.map_obj = mapa
         self.mapa = mapa.mat
-        self.gens = mapa.gens  # Store generators separately
         self.bound_radio = 10
         
         self.posicion = np.array([0.0, 15.0, 0.0])  
@@ -42,6 +42,11 @@ class Personaje:
         self.caught = False
         self.has_escaped = False
         self.frame_count = 0
+        self.generator_cache = []
+        self.fix_input_active = False
+        self.last_fix_frame = 0
+        self.fix_cooldown_frames = 15
+        self.is_fixing = False
 
     def world_to_grid(self, world_x, world_z):
         center_col = 8
@@ -54,14 +59,27 @@ class Personaje:
         return grid_x, grid_y
     
     def grid_to_world(self, grid_x, grid_y):
-        center_col = 7 
-        center_row = 6
+        center_col = 8
+        center_row = 7
         cell_size = 50.0
         
         world_x = (grid_x - center_col) * cell_size
         world_z = (grid_y - center_row) * cell_size
         
         return world_x, world_z
+
+    def set_fixing_input(self, is_pressed):
+        self.fix_input_active = is_pressed
+
+    def update_generator_cache(self, state):
+        if not state:
+            return
+        generators = state.get("generators", [])
+        if generators:
+            self.generator_cache = sorted(
+                generators,
+                key=lambda gen: gen.get("id", 0)
+            )
         
     def send_position_to_server(self):
         grid_x, grid_y = self.world_to_grid(self.posicion[0], self.posicion[2])
@@ -226,11 +244,69 @@ class Personaje:
         
         gen_size = 50.0
         
-        for gx, gz in self.gens:
+        for gx, gz in self.map_obj.gens:
             if abs(cx - gx) < (gen_size/2 + rad) and abs(cz - gz) < (gen_size/2 + rad):
                 return True
 
         return False
+
+    def get_nearby_generator(self, max_distance=60.0):
+        if not self.generator_cache or not self.map_obj.gens:
+            return None
+
+        px, pz = self.posicion[0], self.posicion[2]
+        for generator, (gx, gz) in zip(self.generator_cache, self.map_obj.gens):
+            if generator.get("isFixed"):
+                continue
+            dist = math.sqrt((px - gx) ** 2 + (pz - gz) ** 2)
+            if dist <= max_distance:
+                return generator
+        return None
+
+    def send_fix_request(self, generator_id):
+        if generator_id is None:
+            return False
+        try:
+            response = requests.post(
+                f"{self.base_url}/human/fix",
+                json={"generatorId": generator_id},
+                timeout=0.2
+            )
+            if response.status_code == 200:
+                data = response.json()
+                updated_state = data.get("state")
+                if updated_state:
+                    self.update_generator_cache(updated_state)
+                    self.map_obj.update_generators_from_state(updated_state)
+                return True
+            else:
+                try:
+                    error_payload = response.json()
+                    error_msg = error_payload.get("error")
+                    if error_msg:
+                        print(f"Unable to fix generator: {error_msg}")
+                except:
+                    pass
+        except Exception as exc:
+            print(f"Failed to reach generator endpoint: {exc}")
+        return False
+
+    def process_fixing(self):
+        if not self.fix_input_active:
+            self.is_fixing = False
+            return
+
+        generator = self.get_nearby_generator()
+        if not generator:
+            self.is_fixing = False
+            return
+
+        if self.frame_count - self.last_fix_frame < self.fix_cooldown_frames:
+            return
+
+        if self.send_fix_request(generator.get("id")):
+            self.last_fix_frame = self.frame_count
+            self.is_fixing = True
     
     def can_move(self, nueva_pos):
         celda_size = 50.0
@@ -285,6 +361,8 @@ class Personaje:
     def update(self):
         if self.has_escaped:
             return
+
+        self.frame_count += 1
             
         self.check_server_position()
         self.check_door_escape()
@@ -351,6 +429,8 @@ class Personaje:
             
         elif self.estado == "REPOSO":
             self.reset()
+
+        self.process_fixing()
 
     def reset(self):
         if abs(self.giro_brazo_izq) > 0.5:

@@ -61,6 +61,30 @@ route("/human/position", method = POST) do
     end
 end
 
+# Human fixes a generator
+route("/human/fix", method = POST) do
+    try
+        body = Genie.Requests.jsonpayload()
+        generator_id = Int(body["generatorId"])
+        success, result = human_try_fix_generator(generator_id)
+        if success
+            generator = result
+            generator_state = get_agent_state(generator.id)
+            state = get_model_state()
+            return json(Dict(
+                "status" => "fixing",
+                "generator" => generator_state,
+                "state" => state
+            ))
+        else
+            return json(Dict("error" => result), status = 400)
+        end
+    catch e
+        println("Error fixing generator: $e")
+        return json(Dict("error" => "Failed to process fix request: $e"), status = 400)
+    end
+end
+
 # Get human position
 route("/human/position", method = GET) do
     try

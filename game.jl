@@ -140,6 +140,35 @@ function all_generators_fixed(model)
     return count_unfixed_generators(model) == 0
 end
 
+function open_exit_doors!(model)
+    for agent in allagents(model)
+        if agent isa DoorAgent && !agent.isOpen
+            agent.isOpen = true
+            println("Exit door $(agent.id) is now open!")
+        end
+    end
+end
+
+function apply_fix_progress!(generator::GeneratorAgent, fixer_speed::Int, model, fixer_label::String)
+    if generator.isFixed
+        return
+    end
+
+    generator.timeToFix -= fixer_speed
+    remaining = max(generator.timeToFix, 0)
+    println("$(fixer_label) is fixing Generator $(generator.id). Time left: $(remaining)")
+
+    if generator.timeToFix <= 0
+        generator.isFixed = true
+        generator.timeToFix = 0
+        println("Generator $(generator.id) is now fixed! Generators left: $(count_unfixed_generators(model))")
+
+        if all_generators_fixed(model)
+            open_exit_doors!(model)
+        end
+    end
+end
+
 function inform_exit_location!(exit_pos::NTuple{2, Int}, model)
     for agent in allagents(model)
         if agent isa EscapistAgent && !agent.hasEscaped
@@ -191,22 +220,7 @@ function agent_step!(agent::EscapistAgent, model)
         
         for a in allagents(model)
             if a isa GeneratorAgent && !a.isFixed && is_adjacent(agent.pos, a.pos)
-                a.timeToFix -= agent.fixingSpeed
-                println("Escapist $(agent.id) is fixing Generator $(a.id). Time left: $(a.timeToFix)")
-                
-                if a.timeToFix <= 0
-                    a.isFixed = true
-                    println("Generator $(a.id) is now fixed! Generators left: $(count_unfixed_generators(model))")
-                    
-                    if all_generators_fixed(model)
-                        for door_agent in allagents(model)
-                            if door_agent isa DoorAgent
-                                door_agent.isOpen = true
-                                println("Exit door $(door_agent.id) is now open!")
-                            end
-                        end
-                    end
-                end
+                apply_fix_progress!(a, agent.fixingSpeed, model, "Escapist $(agent.id)")
                 break
             end
         end
@@ -413,4 +427,35 @@ function get_human_position()
         return human.pos
     end
     return nothing
+end
+
+function get_generator_by_id(generator_id::Int)
+    for agent in allagents(model)
+        if agent isa GeneratorAgent && agent.id == generator_id
+            return agent
+        end
+    end
+    return nothing
+end
+
+function human_try_fix_generator(generator_id::Int)
+    human = model[9]
+    if !(human isa HumanAgent)
+        return (false, "Human agent not available")
+    end
+
+    generator = get_generator_by_id(generator_id)
+    if generator === nothing
+        return (false, "Generator not found")
+    end
+    if generator.isFixed
+        return (false, "Generator already fixed")
+    end
+
+    if !(human.pos == generator.pos || is_adjacent(human.pos, generator.pos))
+        return (false, "Human not close enough to generator")
+    end
+
+    apply_fix_progress!(generator, human.fixingSpeed, model, "Human Player")
+    return (true, generator)
 end

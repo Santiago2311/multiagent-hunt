@@ -255,18 +255,23 @@ def actualizar_vista():
               CENTER_Y, CENTER_Z, UP_X, UP_Y, UP_Z)
 
 
-def get_generator_count():
+def fetch_game_state():
     try:
-        response = requests.get("http://localhost:8000/state", timeout=0.1)
+        response = requests.get("http://localhost:8000/state", timeout=0.2)
         if response.status_code == 200:
-            state = response.json()
-            generators = state.get("generators", [])
-            total = len(generators)
-            fixed = sum(1 for gen in generators if gen.get("isFixed", False))
-            return fixed, total
+            return response.json()
     except:
         pass
-    return 0, 0
+    return None
+
+
+def compute_generator_progress(state):
+    if not state:
+        return 0, 0
+    generators = state.get("generators", [])
+    total = len(generators)
+    fixed = sum(1 for gen in generators if gen.get("isFixed", False))
+    return fixed, total
 
 
 def draw_text_2d(text, x, y, font_size=36):
@@ -421,6 +426,15 @@ def display(fixed, total):
     # Draw overlay text
     draw_text_2d(f"Generators: {fixed}/{total}", 20, 20, 48)
 
+    nearby_generator = humano.get_nearby_generator() if humano else None
+    if nearby_generator:
+        time_left = max(nearby_generator.get("timeToFix", 0), 0)
+        gen_id = nearby_generator.get("id", "?")
+        if humano.is_fixing:
+            draw_text_2d(f"Fixing generator {gen_id}… {time_left} time units left", 20, 90, 36)
+        else:
+            draw_text_2d(f"Hold F to fix generator {gen_id} ({time_left} left)", 20, 90, 36)
+
 
 def main():
     global camera_mode, personajes, humano
@@ -440,7 +454,16 @@ def main():
 
     estado_anterior = ""
     frame_count = 0
-    fixed, total = 0, 0
+    cached_state = fetch_game_state()
+    if cached_state:
+        fixed, total = compute_generator_progress(cached_state)
+        if lab:
+            lab.update_generators_from_state(cached_state)
+        if humano:
+            humano.update_generator_cache(cached_state)
+    else:
+        fixed, total = 0, 0
+
 
     while not done:
         for event in pygame.event.get():
@@ -459,11 +482,13 @@ def main():
         teclas_carrito['S'] = keys[pygame.K_s]
         teclas_carrito['A'] = keys[pygame.K_a]
         teclas_carrito['D'] = keys[pygame.K_d]
+        fix_pressed = keys[pygame.K_f]
 
         actualizar_camara_seguimiento(camera_mode)
         actualizar_vista()
 
         if humano:
+            humano.set_fixing_input(fix_pressed)
             humano.actualizar_estado(teclas_carrito)
             humano.update()
 
@@ -477,8 +502,15 @@ def main():
         
         # Update generator count every second
         frame_count += 1
-        if frame_count % 60 == 0:
-            fixed, total = get_generator_count()
+        if frame_count % 30 == 0:
+            latest_state = fetch_game_state()
+            if latest_state:
+                cached_state = latest_state
+                fixed, total = compute_generator_progress(cached_state)
+                if lab:
+                    lab.update_generators_from_state(cached_state)
+                if humano:
+                    humano.update_generator_cache(cached_state)
             frame_count = 0
 
         display(fixed, total)

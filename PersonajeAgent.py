@@ -43,12 +43,10 @@ class PersonajeAgent:
         self.init_position_from_server()
         
     def grid_to_world(self, grid_x, grid_y):
-        center_col = 7  # x center
-        center_row = 6  # z center
+        center_col = 8
+        center_row = 7
         cell_size = 50.0
         
-        # grid_x is column, grid_y is row in Julia
-        # In Python: x = (col - 7) * 50, z = (row - 6) * 50
         world_x = (grid_x - center_col) * cell_size
         world_z = (grid_y - center_row) * cell_size
         
@@ -134,7 +132,7 @@ class PersonajeAgent:
         
             grid_pos = agent_data.get("pos")
             if grid_pos:
-                target_x, target_z = self.grid_to_world(grid_pos[0]-1, grid_pos[1]-1)
+                target_x, target_z = self.grid_to_world(grid_pos[0], grid_pos[1])
                 new_target = np.array([target_x, 15.0, target_z])
             
                 if self.target_pos is None or not np.allclose(new_target, self.target_pos, atol=1.0):
