@@ -275,8 +275,6 @@ def compute_generator_progress(state):
 
 
 def draw_text_2d(text, x, y, font_size=36):
-    """Draw 2D text overlay using OpenGL"""
-    # Save the current matrices
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
@@ -286,11 +284,9 @@ def draw_text_2d(text, x, y, font_size=36):
     glPushMatrix()
     glLoadIdentity()
     
-    # Disable depth test and lighting for 2D overlay
     glDisable(GL_DEPTH_TEST)
     glDisable(GL_LIGHTING)
     
-    # Draw background rectangle
     glColor4f(0.0, 0.0, 0.0, 0.7)
     glBegin(GL_QUADS)
     glVertex2f(x - 10, y - 5)
@@ -299,7 +295,6 @@ def draw_text_2d(text, x, y, font_size=36):
     glVertex2f(x - 10, y + font_size + 5)
     glEnd()
     
-    # Render text using pygame font to texture
     font = pygame.font.Font(None, font_size)
     text_surface = font.render(text, True, (255, 255, 255))
     text_data = pygame.image.tostring(text_surface, "RGBA", False)
@@ -308,7 +303,6 @@ def draw_text_2d(text, x, y, font_size=36):
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     glEnable(GL_TEXTURE_2D)
     
-    # Create texture from text
     text_texture = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, text_texture)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
@@ -316,7 +310,6 @@ def draw_text_2d(text, x, y, font_size=36):
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text_surface.get_width(), 
                  text_surface.get_height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
     
-    # Draw textured quad
     glColor4f(1.0, 1.0, 1.0, 1.0)
     glBegin(GL_QUADS)
     glTexCoord2f(0, 0)
@@ -333,11 +326,9 @@ def draw_text_2d(text, x, y, font_size=36):
     glDisable(GL_TEXTURE_2D)
     glDisable(GL_BLEND)
     
-    # Restore settings
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_LIGHTING)
     
-    # Restore matrices
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
@@ -351,7 +342,7 @@ def Init():
 
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
-    pygame.display.set_caption("Control de Carrito - Máquina de Estados")
+    pygame.display.set_caption("Proyecto Final")
 
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -423,7 +414,6 @@ def display(fixed, total):
         for personaje in personajes:
             personaje.draw()
     
-    # Draw overlay text
     draw_text_2d(f"Generators: {fixed}/{total}", 20, 20, 48)
 
     nearby_generator = humano.get_nearby_generator() if humano else None
@@ -500,7 +490,6 @@ def main():
             for personaje in personajes:
                 personaje.update()
         
-        # Update generator count every second
         frame_count += 1
         if frame_count % 30 == 0:
             latest_state = fetch_game_state()

@@ -272,7 +272,7 @@ model = ABM(Union{DoorAgent, GeneratorAgent, EscapistAgent, SaboteurAgent, Human
 
 @assert is_walkable(SPAWN_POS) "Spawn point must be on a walkable cell"
 
-exit_door = DoorAgent(1, (12, 12), false)
+exit_door = DoorAgent(1, (7, 1), false)
 @assert is_walkable(exit_door.pos) "Exit door must be on a walkable cell"
 add_agent_own_pos!(exit_door, model)
 
